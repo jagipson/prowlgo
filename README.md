@@ -39,14 +39,13 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 		}
 
  1. Congratulations your first prowl message was just delivered to your device.
- 1. Make sure everything is working by running the tests. The tests require a API key and a provider key which you already created in the first step. Now copy the file prowlgo/setup_to_test.go.sample to setup_the_test.go
+ 1. Make sure everything is working by running the tests. The tests require an API key and a provider key which you already created in the first step. Now create your private `setup_the_test.gp` file which will contain constants holding your keys so that they become accesible to the test program.
 
-		cd prowlgo
+		cd $prowlgo_dir
 		cp setup_the_test.go.sample setup_the_test.go
 
- 1. open setup_the_test.go with an editor and replace the dummy keys with the keys you created at prowlapp.com
- 1. save prowlgo/setup_the_test.go
- 1. thenrun `go test` in the prowl directory. All tests should be passed.
+ 1. Open `setup_the_test.go` with an editor and replace the dummy keys with the keys you created at prowlapp.com then save `setup_the_test.go`. This file name is listet in `.gitignore`. It will not get published accidentally.
+ 1. Then run `go test` in the prowl directory. All tests should be passed.
 
 ## Documentation
 
