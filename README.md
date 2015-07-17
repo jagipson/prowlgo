@@ -3,12 +3,12 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 
 ## Quick-Start
 
- 1. Go to prowlapp.com and create yourself an API key and a provider key
- 1. install the package
+ 1. Go to http://www.prowlapp.com/ and crea)te yourself an API key and a provider key.
+ 1. Install the package
 
 		go get github.com/tweithoener/prowlgo
 
- 1. Get a minimal example going. Grab the code from below, put it into a file (say prowling.go) and run it using go run prowling.go
+ 1. Get a minimal example going. Grab the code from below, put it into a file (say `prowling.go`), replace the dummy API key with a real one, and run the program using `go run prowling.go`
 
 		package main
 
@@ -39,23 +39,18 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 		}
 
  1. Congratulations your first prowl message was just delivered to your device.
- 1. Make sure everything is working by running the tests. The tests require a API key and a provider key which you already created in the first step. Now
-   a. copy the file prowlgo/setup_to_test.go.sample to setup_the_test.go
+ 1. Make sure everything is working by running the tests. The tests require a API key and a provider key which you already created in the first step. Now copy the file prowlgo/setup_to_test.go.sample to setup_the_test.go
 
 		cd prowlgo
 		cp setup_the_test.go.sample setup_the_test.go
 
-   a. open setup_the_test.go with an editor and replace the dummy keys with the keys you created at prowlapp.com
-   a. save prowlgo/setup_the_test.go
-   a. thenrun
-   
-		go test
-  
-     in the prowl directory. All tests should be passed.
+ 1. open setup_the_test.go with an editor and replace the dummy keys with the keys you created at prowlapp.com
+ 1. save prowlgo/setup_the_test.go
+ 1. thenrun `go test` in the prowl directory. All tests should be passed.
 
 ## Documentation
 
-The package is documented using godoc. Thre resulting documentation can be found here: http://godoc.org/github.com/tweithoener/prowlgo)
+The package is documented using godoc. Thre resulting documentation can be found here: http://godoc.org/github.com/tweithoener/prowlgo
 Check it out it is full of code examples. Start at type Client and browse through it. It's easy to understand.
 
 ## TODO
