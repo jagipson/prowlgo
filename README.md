@@ -3,7 +3,7 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 
 ## Quick-Start
 
- 1. Go to http://www.prowlapp.com/ and crea)te yourself an API key and a provider key.
+ 1. Go to http://www.prowlapp.com/ and create yourself an API key and a provider key.
  1. Install the package
 
 		go get github.com/tweithoener/prowlgo
@@ -39,7 +39,7 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 		}
 
  1. Congratulations your first prowl message was just delivered to your device.
- 1. Make sure everything is working by running the tests. The tests require an API key and a provider key which you already created in the first step. Now create your private `setup_the_test.gp` file which will contain constants holding your keys so that they become accesible to the test program.
+ 1. Make sure everything is working by running the tests. The tests require an API key and a provider key which you already created in the first step. Now create your private `setup_the_test.go` file which will contain constants holding your keys, so that they become accesible to the test program.
 
 		cd $prowlgo_dir
 		cp setup_the_test.go.sample setup_the_test.go
@@ -49,7 +49,7 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 
 ## Documentation
 
-The package is documented using godoc. Thre resulting documentation can be found here: http://godoc.org/github.com/tweithoener/prowlgo
+The package is documented using godoc. Thre resulting documentation can be found here: http://godoc.org/github.com/tweithoener/prowlgo.
 Check it out it is full of code examples. Start at type Client and browse through it. It's easy to understand.
 
 ## TODO
