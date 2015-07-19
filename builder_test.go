@@ -10,7 +10,7 @@ func ExampleBuilder_simple() {
 	//To create a prowl client which is goo for sending out
 	//message we will need an api key and the application string won't hurt
 	client, err := NewBuilder().
-		SetAPIKey(aValidAPIKey).
+		AddAPIKey(singleValidAPIKey).
 		SetApplication("prowlgo Test").
 		Build()
 	if err != nil {
@@ -18,7 +18,7 @@ func ExampleBuilder_simple() {
 	}
 
 	//Let's see if we got what we expected...
-	if client.Config().APIKey == aValidAPIKey {
+	if client.apiKeys[singleValidAPIKey] {
 		fmt.Println("api key is ok")
 	}
 	if client.Config().Application == "prowlgo Test" {
@@ -42,10 +42,10 @@ func ExampleBuilder_simple() {
 func ExampleBuilder_more() {
 	toProwlLabel := "--> prowl"
 
-	//To create a prowl client which is goo for sending out
-	//message we will need an api key and the application string won't hurt
+	//A client which should also have just one
 	client, err := NewBuilder().
-		SetAPIKey(aValidAPIKey).
+		AddAPIKey(singleValidAPIKey).
+		AddAPIKey(singleValidAPIKey).
 		SetProviderKey(aValidProviderKey).
 		SetToken("0123456789012345678901234567890123456789").
 		SetApplication("prowlgo Test").
@@ -57,7 +57,13 @@ func ExampleBuilder_more() {
 	}
 
 	//Let's see if we got what we expected...
-	if client.Config().APIKey == aValidAPIKey {
+	if len(client.apiKeys) != 1 {
+		fmt.Println("error api key count")
+	}
+	if len(client.Config().APIKeys) != 1 {
+		fmt.Printf("error config api key count %d", len(client.Config().APIKeys))
+	}
+	if client.apiKeys[singleValidAPIKey] {
 		fmt.Println("api key is ok")
 	}
 	if client.Config().Application == "prowlgo Test" {

@@ -14,10 +14,19 @@ func NewBuilder() *Builder {
 	return &Builder{}
 }
 
-// SetAPIKey defines the api key for the client that will be built using this builder. Needs to be
-//called when your client needs to make Add requests.
-func (bld *Builder) SetAPIKey(apiKey string) *Builder {
-	bld.config.APIKey = apiKey
+// AddAPIKey adds the provided api key to the list of api keys that the client will use. Needs to be
+//called at least once when your client needs to make Add requests.
+func (bld *Builder) AddAPIKey(apiKey string) *Builder {
+	//no checking for duplicates here. NewClient() will take care of this later on.
+	bld.config.APIKeys = append(bld.config.APIKeys, apiKey)
+	return bld
+}
+
+// AddAllAPIKeys adds all provided api keys to the list of api keys the client will use.
+func (bld *Builder) AddAllAPIKeys(apiKeys []string) *Builder {
+	for _, key := range apiKeys {
+		bld.AddAPIKey(key)
+	}
 	return bld
 }
 

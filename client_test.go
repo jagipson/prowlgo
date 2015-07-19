@@ -10,7 +10,7 @@ import (
 func ExampleNewClient() {
 	// Create a new client e.g. for sending out message.
 	client, err := NewClient(Config{
-		APIKey:      aValidAPIKey,
+		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
 	if err != nil {
@@ -32,7 +32,7 @@ func ExampleNewClient() {
 	}
 
 	//They should be the same...
-	if client.Config().APIKey == other.Config().APIKey {
+	if client.Config().APIKeys[0] == other.Config().APIKeys[0] {
 		fmt.Println("both the same.")
 	}
 
@@ -42,10 +42,10 @@ func ExampleNewClient() {
 	//both the same.
 }
 
-func ExampleClient_Add() {
+func ExampleClient_Add_singleKey() {
 	// Create a new client for sending out message.
 	client, err := NewClient(Config{
-		APIKey:      aValidAPIKey,
+		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
 	if err != nil {
@@ -68,10 +68,44 @@ func ExampleClient_Add() {
 	//some api calls left
 }
 
+func ExampleClient_Add_multiKey() {
+	// Create a new client for sending out message to multiple devices.
+	//It's not a lot different from sending to a single device -- it's
+	//just multiple api keys in the array this time!
+	client, err := NewClient(Config{
+		APIKeys:     multipleValidAPIKeys,
+		Application: "prowlgo Example",
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//Let's check ...
+	//Client should be configured with multiple api keys
+	if len(client.Config().APIKeys) != len(multipleValidAPIKeys) {
+		fmt.Println("api key count mismatch")
+	}
+
+	//Send something
+	remaining, err := client.Add(PrioNormal, "Test Event", "This message is sent to multiple devices...")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if remaining > 0 {
+		fmt.Println("some api calls left")
+	}
+
+	//output:
+	//some api calls left
+}
+
 func ExampleClient_AddWithURL() {
 	// Create a new client for sending out message.
 	client, err := NewClient(Config{
-		APIKey:      aValidAPIKey,
+		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
 	if err != nil {
@@ -128,7 +162,7 @@ func ExampleClient_Config() {
 	}
 
 	//They should be the same...
-	if client.Config().APIKey == other.Config().APIKey && client.Config().ProviderKey == other.Config().ProviderKey {
+	if len(client.Config().APIKeys) == len(other.Config().APIKeys) && client.Config().ProviderKey == other.Config().ProviderKey {
 		fmt.Println("both the same.")
 	}
 
@@ -140,7 +174,7 @@ func ExampleClient_Log() {
 	toProwlLabel := "--> Prowl"
 	// Create a new client for sending out messages
 	client, err := NewClient(Config{
-		APIKey:       aValidAPIKey,
+		APIKeys:      aValidAPIKey,
 		Application:  "prowlgo Example",
 		ToProwlLabel: &toProwlLabel,
 		Logger:       log.New(os.Stdout, "TestLogger: ", 0),
@@ -167,7 +201,7 @@ func ExampleClient_Verify_simple() {
 		return
 	}
 	//Verify the provided API key using the client.
-	if _, err = client.Verify(aValidAPIKey); err != nil {
+	if _, err = client.Verify(singleValidAPIKey); err != nil {
 		fmt.Println(err)
 	}
 
@@ -185,7 +219,7 @@ func ExampleClient_Verify_more() {
 		return
 	}
 	//Verify a valid api key
-	if _, err := client.Verify(aValidAPIKey); err != nil {
+	if _, err := client.Verify(singleValidAPIKey); err != nil {
 		fmt.Println(err)
 	}
 
@@ -203,7 +237,7 @@ func ExampleClient_Verify_more() {
 
 	//Also wrong
 	client, err = NewClient(Config{
-		ProviderKey: aValidAPIKey,
+		ProviderKey: singleValidAPIKey,
 	})
 	if err != nil {
 		fmt.Println(err)
@@ -212,7 +246,7 @@ func ExampleClient_Verify_more() {
 	//Verify this key -- will work out. The provider key is not verified
 	//but you wont profit from a higher api call limit either (which your
 	//valid provider key might be white listed for)
-	if _, err = client.Verify(aValidAPIKey); err != nil {
+	if _, err = client.Verify(singleValidAPIKey); err != nil {
 		fmt.Println(err)
 	}
 

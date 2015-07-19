@@ -41,6 +41,9 @@ const (
 	waitSync       = -1 * time.Second
 
 	defaultToProwlLabel = "(copied to prowl)"
+
+	enter = true
+	leave = false
 )
 
 // Client represents the prowl client which is used
@@ -55,6 +58,9 @@ const (
 //  - Write to the log and inparallel notify your iOS device (see Log and LogSync)
 type Client struct {
 	config       Config
+	apiKeys      map[string]bool
+	apiKeysDirty bool
+	lock         chan bool
 	unauthorized bool
 	remaining    int
 	reset        time.Time
@@ -65,7 +71,10 @@ type Client struct {
 type Config struct {
 	//APIKey is the api key that is to be used by this app. Needed for Add requests.
 	//Not needed for RetrieveToken and RetrieveAPIKey calls.
-	APIKey string
+	//The program is not working on this string array it is only there for simplified
+	//configuration of the client. The client operates on a map which is copied back
+	//when the Config() getter is called.
+	APIKeys []string
 
 	//ProviderKey is the provider key that is used in RetrieveToken and RetrieveAPIKey calls.
 	//It must be defined for these calls. It is optional for calls to Add. Here it might
@@ -127,8 +136,8 @@ type Response struct {
 //
 // Alternatively you can use the Builder to create a new Client instance.
 func NewClient(config Config) (clt *Client, err error) {
-	if len(config.APIKey) != 40 && len(config.APIKey) != 0 {
-		return nil, fmt.Errorf("api key must either be 40 chars long or undefined")
+	if config.APIKeys == nil {
+		config.APIKeys = make([]string, 0)
 	}
 	if len(config.ProviderKey) != 40 && len(config.ProviderKey) != 0 {
 		return nil, fmt.Errorf("provider key must either be 40 chars long or undefined")
@@ -138,6 +147,16 @@ func NewClient(config Config) (clt *Client, err error) {
 	}
 	if len(config.Application) > 256 {
 		return nil, fmt.Errorf("application must not exceed 256 chars in length")
+	}
+
+	apiKeys := make(map[string]bool)
+	for _, key := range config.APIKeys {
+		if len(key) != 40 {
+			return nil, fmt.Errorf("api key must either be 40 chars long or undefined")
+		}
+		if !apiKeys[key] {
+			apiKeys[key] = true
+		}
 	}
 
 	if config.Logger == nil {
@@ -150,6 +169,9 @@ func NewClient(config Config) (clt *Client, err error) {
 
 	return &Client{
 		config:       config,
+		apiKeys:      apiKeys,
+		apiKeysDirty: len(apiKeys) != len(config.APIKeys),
+		lock:         make(chan bool, 1),
 		unauthorized: false,
 		remaining:    1000,
 		reset:        time.Now(),
@@ -175,7 +197,7 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	if clt.unauthorized {
 		return clt.remaining, fmt.Errorf("the api key is know to be invalid")
 	}
-	if len(clt.config.APIKey) != 40 {
+	if len(clt.config.APIKeys) == 0 {
 		return clt.remaining, fmt.Errorf("a valid api key is required for add operation")
 	}
 	if priority < -2 || priority > 2 {
@@ -206,7 +228,7 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	}
 
 	resp, err := http.PostForm(addURL, url.Values{
-		"apikey":      {clt.config.APIKey},
+		"apikey":      {clt.makeAPIKeyRequestArgument()},
 		"providerkey": {clt.config.ProviderKey},
 		"priority":    {fmt.Sprintf("%d", priority)},
 		"application": {clt.config.Application},
@@ -332,9 +354,21 @@ func (clt *Client) RetrieveAPIKey() (apiKey string, err error) {
 		return
 	}
 
-	clt.config.APIKey = response.Retrieve.APIKey
+	clt.apiKeys[apiKey] = true
 
-	return clt.config.APIKey, nil
+	return response.Retrieve.APIKey, nil
+}
+
+func (clt *Client) makeAPIKeyRequestArgument() (req string) {
+	i := 0
+	for key := range clt.apiKeys {
+		req += key
+		if i < len(clt.config.APIKeys)-1 {
+			req += ","
+		}
+		i++
+	}
+	return
 }
 
 func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Response, err error) {
@@ -368,6 +402,7 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 	}
 
 	if len(response.Error.XMLName.Local) != 0 {
+		//BUG: unauthorized logic must only apply to Add calls!
 		if response.Error.Code == 401 {
 			clt.unauthorized = true
 		}
@@ -389,9 +424,22 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 // might be processing the following step (RetrieveAPIKey). This new instance can
 // easily be configured with the Config returned by this call.
 //
-//You might consider persisting it in a JSON serialization. This will omit the Config-Logger field
+//You might consider persisting it in a JSON serialization. This will omit the Config.Logger field
 //automatically.
 func (clt *Client) Config() Config {
+	clt.mutex(enter)
+	defer clt.mutex(leave)
+
+	if clt.apiKeysDirty {
+		clt.config.APIKeys = make([]string, len(clt.apiKeys))
+		i := 0
+		for key := range clt.apiKeys {
+			clt.config.APIKeys[i] = key
+			i++
+		}
+	}
+	clt.apiKeysDirty = false
+
 	return clt.config
 }
 
@@ -439,4 +487,12 @@ func (clt *Client) LogSync(prio int, event string, message string) {
 
 func (clt *Client) String() string {
 	return fmt.Sprintf("prowl client for application %s, %d api requests left, reset at %s", clt.config.Application, clt.remaining, clt.reset)
+}
+
+func (clt *Client) mutex(enter bool) {
+	if enter {
+		clt.lock <- true
+	} else {
+		<-clt.lock
+	}
 }

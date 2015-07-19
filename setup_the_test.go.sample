@@ -6,7 +6,8 @@
 
 package prowlgo
 
-const (
-	aValidAPIKey = "e192384beae856efa6dda87d6a00837cf968bd8c"
+var (
+	aValidAPIKey = []string{"e192384beae856efa6dda87d6a00837cf968bd8c"}
+	multipleValidAPIKeys = []string{"e192384beae856efa6dda87d6a00837cf968bd8c", "e19238423ae856efa6ddadf34a00837cf968bd8c", "e17ef34beae856efa6dda87d6a0082130168bd8c"}
 	aValidProviderKey = "0267157cc27a27f99ad23d1f785f0e7897df0d6b"
 )
