@@ -52,10 +52,9 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 The package is documented using godoc. Thre resulting documentation can be found here: http://godoc.org/github.com/tweithoener/prowlgo.
 Check it out it is full of code examples. Start at type Client and browse through it. It's easy to understand.
 
-## TODO
+## TODO And Open Issues
 
-Looks like I forgot that you can feed multiple API keys into one request to the prowl server. I'll take care of this... very soon.
-Besides that, let me know about any problems that you detect.
+See the issues list (https://github.com/tweithoener/prowlgo/issues).
 
 ## What's about that other golang prowl package
 
