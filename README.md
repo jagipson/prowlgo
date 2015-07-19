@@ -20,7 +20,7 @@ golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go A
 		func main() {
 			//Create the client.
 			client, err := prowl.NewClient(prowl.Config{
-				APIKey:      "abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde", //Replace with something valid!
+				APIKeys:     []string{"abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde"}, //Replace with somet     hing valid!
 				Application: "prowlgo Demo",
 			})
 			if err != nil {
