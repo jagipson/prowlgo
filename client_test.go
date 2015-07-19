@@ -159,16 +159,15 @@ func ExampleClient_Log() {
 }
 
 func ExampleClient_Verify_simple() {
-	// Create a new working client e.g. for sending out messages
-	client, err := NewClient(Config{
-		APIKey: aValidAPIKey,
-	})
+	// Create a new client
+	//If we just use it to verify an API key we do not need to configure anything.
+	client, err := NewClient(Config{})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	//Verify this client
-	if _, err = client.Verify(); err != nil {
+	//Verify the provided API key using the client.
+	if _, err = client.Verify(aValidAPIKey); err != nil {
 		fmt.Println(err)
 	}
 
@@ -177,62 +176,44 @@ func ExampleClient_Verify_simple() {
 }
 
 func ExampleClient_Verify_more() {
-	//Create a client with api key and provider key
-	//Might be used to send messages and thereby profiting
-	//from a raised api limit for the provider key
+	//Create a client with provider key
 	client, err := NewClient(Config{
-		APIKey:      aValidAPIKey,
 		ProviderKey: aValidProviderKey,
 	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	//Verify this client -- should also work out
-	if _, err := client.Verify(); err != nil {
+	//Verify a valid api key
+	if _, err := client.Verify(aValidAPIKey); err != nil {
 		fmt.Println(err)
-	}
-
-	//Next a client with only a provider key
-	//That won't verify.
-	client, err = NewClient(Config{
-		ProviderKey: aValidProviderKey,
-	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//Verify this client -- should not work
-	if _, err = client.Verify(); err != nil {
-		fmt.Println("intentional error")
 	}
 
 	//And more things that should not work...
-	//A api key is not a provider key
-	client, err = NewClient(Config{
-		ProviderKey: aValidAPIKey,
-	})
+	//A provider key is not a api key
+	client, err = NewClient(Config{})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	//Verify this client -- should produce an error
-	if _, err = client.Verify(); err != nil {
-		fmt.Println("intentional error")
+	if _, err = client.Verify(aValidProviderKey); err != nil {
+		fmt.Println("intentional error 1")
 	}
 
 	//Also wrong
 	client, err = NewClient(Config{
-		APIKey:      aValidProviderKey,
 		ProviderKey: aValidAPIKey,
 	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	//Verify this client -- should produce an error
-	if _, err = client.Verify(); err != nil {
-		fmt.Println("intentional error")
+	//Verify this key -- will work out. The provider key is not verified
+	//but you wont profit from a higher api call limit either (which your
+	//valid provider key might be white listed for)
+	if _, err = client.Verify(aValidAPIKey); err != nil {
+		fmt.Println(err)
 	}
 
 	//And finally no key at all -- can't work either
@@ -241,18 +222,16 @@ func ExampleClient_Verify_more() {
 		fmt.Println(err)
 		return
 	}
-	//Verify this client -- should produce an error.
+	//Verify an empty key -- should produce an error.
 	//Actually that shouldn't even go out to the Prowl server.
 	//No api call spent on that.
-	if _, err := client.Verify(); err != nil {
-		fmt.Println("intentional error")
+	if _, err := client.Verify(""); err != nil {
+		fmt.Println("intentional error 2")
 	}
 
 	//output:
-	//intentional error
-	//intentional error
-	//intentional error
-	//intentional error
+	//intentional error 1
+	//intentional error 2
 }
 
 func ExampleClient_RetrieveToken() {

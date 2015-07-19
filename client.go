@@ -228,11 +228,18 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	return clt.remaining, nil
 }
 
-// Verify verifys the validity of the api and provider keys of this client.
-// If one of the keys is not valid it will return an error. If the keys are OK
+// Verify verifys the validity of the provided api key.
+// Invoking this method will cost you an prowl api call.
+// If you have a provider key which is whitlisted for a higher call limit make
+// sure you use a client which is configured with that provider key.
+// If the key is not valid it will return an error. If the key is OK
 // the number of remaining api calls is returned.
-func (clt *Client) Verify() (remaining int, err error) {
+func (clt *Client) Verify(apiKey string) (remaining int, err error) {
 	remaining = clt.remaining
+	if len(apiKey) != 40 {
+		err = fmt.Errorf("apiKey argument must be exactly 40 chars long")
+		return
+	}
 
 	u, err := url.Parse(verifyURL)
 	if err != nil {
@@ -240,7 +247,7 @@ func (clt *Client) Verify() (remaining int, err error) {
 	}
 
 	q := u.Query()
-	q.Set("apikey", clt.config.APIKey)
+	q.Set("apikey", apiKey)
 	if len(clt.config.ProviderKey) == 40 {
 		q.Set("providerkey", clt.config.ProviderKey)
 	}
