@@ -9,6 +9,7 @@ package prowlgo
 import (
 	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -389,8 +390,8 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 		}
 	}()
 
-	buf := make([]byte, 1024)
-	if _, err = resp.Body.Read(buf); err != nil {
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		err = fmt.Errorf("can't read HTTP response body: %s", err)
 		return
 	}
