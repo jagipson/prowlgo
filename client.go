@@ -196,7 +196,7 @@ func (clt *Client) Add(priority int, event string, description string) (remainin
 // the user can tap to open the URL.
 func (clt *Client) AddWithURL(priority int, event string, description string, withURL string) (remaining int, err error) {
 	if clt.unauthorized {
-		return clt.remaining, fmt.Errorf("the api key is know to be invalid")
+		return clt.remaining, fmt.Errorf("api key(s) are known to be invalid")
 	}
 	if len(clt.config.APIKeys) == 0 {
 		return clt.remaining, fmt.Errorf("a valid api key is required for add operation")
@@ -241,6 +241,10 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 
 	if err != nil {
 		return clt.remaining, fmt.Errorf("add request to prowl server failed: %s", err)
+	}
+
+	if response.Error.Code == 401 {
+		clt.unauthorized = true
 	}
 
 	if response.Success.XMLName.Local != "" {
@@ -325,7 +329,7 @@ func (clt *Client) RetrieveToken() (approveURL string, err error) {
 }
 
 // RetrieveAPIKey retrieves a new api key from the prowl server. This call requires
-// that this client is configured with a valied provider key and a vaild token.
+// that this client is configured with a valid provider key and a vaild token.
 //
 //For an Example see Client.RetrieveToken
 func (clt *Client) RetrieveAPIKey() (apiKey string, err error) {
@@ -355,9 +359,11 @@ func (clt *Client) RetrieveAPIKey() (apiKey string, err error) {
 		return
 	}
 
+	apiKey = response.Retrieve.APIKey
 	clt.apiKeys[apiKey] = true
+	clt.unauthorized = false
 
-	return response.Retrieve.APIKey, nil
+	return
 }
 
 func (clt *Client) makeAPIKeyRequestArgument() (req string) {
@@ -403,10 +409,6 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 	}
 
 	if len(response.Error.XMLName.Local) != 0 {
-		//BUG: unauthorized logic must only apply to Add calls!
-		if response.Error.Code == 401 {
-			clt.unauthorized = true
-		}
 		err = fmt.Errorf("prowl returned error code %d: %s", response.Error.Code, response.Error.Message)
 		return
 	}
