@@ -239,12 +239,15 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	})
 	response, err := clt.handleResponse(resp, err)
 
-	if err != nil {
-		return clt.remaining, fmt.Errorf("add request to prowl server failed: %s", err)
-	}
-
 	if response.Error.Code == 401 {
 		clt.unauthorized = true
+	}
+	if response.Error.Code == 406 {
+		clt.remaining = 0
+	}
+
+	if err != nil {
+		return clt.remaining, fmt.Errorf("add request to prowl server failed: %s", err)
 	}
 
 	if response.Success.XMLName.Local != "" {
@@ -361,6 +364,7 @@ func (clt *Client) RetrieveAPIKey() (apiKey string, err error) {
 
 	apiKey = response.Retrieve.APIKey
 	clt.apiKeys[apiKey] = true
+	clt.apiKeysDirty = true
 	clt.unauthorized = false
 
 	return
@@ -486,10 +490,6 @@ func (clt *Client) Log(prio int, event string, message string) {
 func (clt *Client) LogSync(prio int, event string, message string) {
 	clt.logWait(prio, event, message, waitSync)
 
-}
-
-func (clt *Client) String() string {
-	return fmt.Sprintf("prowl client for application %s, %d api requests left, reset at %s", clt.config.Application, clt.remaining, clt.reset)
 }
 
 func (clt *Client) mutex(enter bool) {

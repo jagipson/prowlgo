@@ -46,6 +46,7 @@ func ExampleBuilder_more() {
 	client, err := NewBuilder().
 		AddAPIKey(singleValidAPIKey).
 		AddAPIKey(singleValidAPIKey).
+		AddAllAPIKeys([]string{singleValidAPIKey, singleValidAPIKey}).
 		SetProviderKey(aValidProviderKey).
 		SetToken("0123456789012345678901234567890123456789").
 		SetApplication("prowlgo Test").
@@ -54,9 +55,9 @@ func ExampleBuilder_more() {
 		Build()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
-	//Let's see if we got what we expected...
 	if len(client.apiKeys) != 1 {
 		fmt.Println("error api key count")
 	}
