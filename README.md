@@ -1,7 +1,7 @@
 # prowlgo
 golang Interface to Prowl: Send Push Notifications to iOS Devices From Your go Application
 
-[![GoDoc](https://godoc.org/github.com/tweithoener/prowlgo?status.svg)](https://godoc.org/github.com/tweithoener/prowlgo) [![Coverage Status](https://img.shields.io/coveralls/tweithoener/prowlgo.svg)](https://coveralls.io/r/tweithoener/prowlgo?branch=master) [![Build Status](https://travis-ci.org/tweithoener/prowlgo.svg)](https://travis-ci.org/tweithoener/prowlgo)
+[![GoDoc](https://godoc.org/github.com/tweithoener/prowlgo?status.svg)](https://godoc.org/github.com/tweithoener/prowlgo) [![Coverage Status](https://coveralls.io/repos/tweithoener/prowlgo/badge.svg?branch=master&service=github)](https://coveralls.io/github/tweithoener/prowlgo?branch=master) [![Build Status](https://travis-ci.org/tweithoener/prowlgo.svg)](https://travis-ci.org/tweithoener/prowlgo)
 
 ## Quick-Start
 
