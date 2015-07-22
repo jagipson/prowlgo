@@ -3,6 +3,18 @@ language: go
 go:
     - 1.4
 
+env:
+    global:
+        secure: "QsFI7ZNL+FtjrHTMM2U48ss2FIdglgI1uMW64taei5hrALwZKvRk7SCkCc/v+nf6P6SU3mG5rUu1kHdxCVZGrmbXLDtSr2RFeOM/aXNk54vNzzBAm/M6ye+Frywa6eFYDCOBVdbTRr52fCLZmCHgQUbS7U2rc0CrotfekqEP2kdatP+orWClLXJD3GyqgI5KQ98s9X3FTlw3HsOKqzmisCl6eomORdGpdB0NYmvW194rcQCb/fspNzhPlwdtMyxjRuFBFZjGigjZP5hd9wEF3ViJ+9tr85ocyxb1hANv5u1dEZrTpUy4YRv9WPRUOeB5m3RYoW006PhFuoVgTIscJm28vJsO1SxfANxSZNRa3oWH2pKXQ2mqDPzYflyZnywFUS7r5aMmhqLE0aoFiqwKCa2tD/g6yhF9vz6vlHFd2kA9+p9dw6OAa4yGfW0WQCdI8MSGJuO/Df1daEMd7VnNQsslj0i8MIuQOHjKe8QUsadiHaUSLYaYegks22plB5KI98OMufGycB4eLyIqgXOG/eV7jRAYbfyIr8guhp88DRcj14zaxNZwKGJS/zhgAtqKKv5s+rxoNUrWCCuU2LnmTnrnalN2a4vrl50eq/xhjkDMzOTaFl+8bs6De5NieH/+HKWXQN91eSD6qMWlQMiCMek482qYOsGX3yOiiGEZZ+s="
+
 notifications:
     email:
         - t.weithoener@gmx.net
+
+install:
+    go get code.google.com/p/go.tools/cmd/cover
+    go get github.com/mattn/goveralls
+
+script:
+    go test -v -covermode=count -coverprofile=coverage.out
+    $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
