@@ -593,6 +593,105 @@ func TestReset(t *testing.T) {
 
 }
 
+func ExampleClient_AddAPIKey() {
+
+	//First create a new client, with a single API key
+	client, err := NewClient(Config{
+		APIKeys: []string{"5a7d185a7d185a7d185a7d185a7d185a7d185a7d"},
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//Now add another API key
+	if err := client.AddAPIKey("55df3a55df3a55df3a55df3a55df3a55df3a55df"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//And add the same key again. It will not produce an error but the key will not be added.
+	if err := client.AddAPIKey("55df3a55df3a55df3a55df3a55df3a55df3a55df"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//We should now have two API keys in the configuratoin
+	if len(client.Config().APIKeys) == 2 {
+		fmt.Println("two api keys in config")
+	}
+
+	//Now let's remove the first API key
+	if err := client.RemoveAPIKey("5a7d185a7d185a7d185a7d185a7d185a7d185a7d"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//We should now have one API key in the configuratoin
+	if len(client.Config().APIKeys) == 1 {
+		fmt.Println(client.Config().APIKeys[0])
+	}
+
+	//output:
+	//two api keys in config
+	//55df3a55df3a55df3a55df3a55df3a55df3a55df
+}
+
+func TestAddRemoveAPIKeys(t *testing.T) {
+
+	client, err := NewClient(Config{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	//Check illegal API keys
+	if err := client.AddAPIKey(""); err == nil {
+		t.Error("illegal API key should produce an error")
+	}
+
+	if err := client.AddAPIKey(stringOfLen(41)); err == nil {
+		t.Error("illegal API key should produce an error")
+	}
+	if err := client.RemoveAPIKey(""); err == nil {
+		t.Error("illegal API key should produce an error")
+	}
+	if err := client.RemoveAPIKey(stringOfLen(41)); err == nil {
+		t.Error("illegal API key should produce an error")
+	}
+
+	//Removing something that is not there shouldn't produce an error
+	if err := client.RemoveAPIKey("0123401234012340123401234012340123401234"); err != nil {
+		t.Error("error removing API key that was not added before")
+	}
+
+	//We expect an empty array of API keys at this point
+	if len(client.Config().APIKeys) != 0 {
+		t.Error("client config not correct")
+	}
+
+	//Add two API keys, then send a message and check that the "apikey" parameter of
+	//the http request was correct.
+	key1 := "1111111111111111111111111111111111111111"
+	key2 := "2222222222222222222222222222222222222222"
+
+	if err := client.AddAPIKey(key1); err != nil {
+		t.Error(err)
+	}
+	if err := client.AddAPIKey(key2); err != nil {
+		t.Error(err)
+	}
+	if _, err := client.Add(PrioNormal, "TestEvent", "TestDescription"); err != nil {
+		t.Error(err)
+	}
+
+	p1 := key1 + "," + key2
+	p2 := key2 + "," + key1
+	if mock.lastAPIKey != p1 && mock.lastAPIKey != p2 {
+		log.Println(mock.lastAPIKey)
+		t.Error("apikey request parameter is not correct")
+	}
+}
+
 // ----------------------------------------------------------------------------------------------
 // Mocking a https server during testing
 
@@ -637,6 +736,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		fmt.Fprintf(w, add200, remaining, mock.resetTS)
 		mock.lastDescription = r.FormValue("description")
+		mock.lastAPIKey = r.FormValue("apikey")
 
 	case "/publicapi/verify":
 		if r.URL.Query().Get("apikey") == "" {
@@ -696,6 +796,7 @@ type mockServer struct {
 	internalError     bool
 	resetTS           int64
 	lastDescription   string
+	lastAPIKey        string
 	server            *httptest.Server
 }
 
