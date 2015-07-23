@@ -175,7 +175,7 @@ func NewClient(config Config) (clt *Client, err error) {
 		lock:         make(chan bool, 1),
 		unauthorized: false,
 		remaining:    1000,
-		reset:        time.Now(),
+		reset:        time.Now().Add(1 * time.Hour),
 	}, nil
 }
 
@@ -423,6 +423,13 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 	}
 
 	return
+}
+
+//Reset will return the reset time of the api call limit. This call will only return
+//reasonable values if a successful request to theserver was made before invoking this
+//method.
+func (clt *Client) Reset() time.Time {
+	return clt.reset
 }
 
 // Config returns the config of this client. This can be handy if you need to

@@ -550,6 +550,30 @@ func TestRetrieveTokenAndAPIKey(t *testing.T) {
 
 }
 
+func TestReset(t *testing.T) {
+	mock.reset()
+	defer mock.reset()
+
+	resetTS := time.Now().Add(2 * time.Minute).Unix()
+	mock.resetTS = resetTS
+
+	client, err := NewClient(Config{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	//Let's make a request. In the answer the client will find the reset timestamp which is
+	//then stored in the client instance.
+	if _, err := client.Verify("0123401234012340123401234012340123401234"); err != nil {
+		t.Error(err)
+	}
+
+	if client.Reset().Unix() != resetTS {
+		t.Error("timestamp does not match")
+	}
+
+}
+
 // ----------------------------------------------------------------------------------------------
 // Mocking a https server during testing
 
@@ -592,7 +616,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(200)
-		fmt.Fprintf(w, add200, remaining, time.Now().Add(37*time.Minute).Unix())
+		fmt.Fprintf(w, add200, remaining, mock.resetTS)
 
 	case "/publicapi/verify":
 		if r.URL.Query().Get("apikey") == "" {
@@ -603,7 +627,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 
 		if mock.acceptAPIKeys {
 			w.WriteHeader(200)
-			fmt.Fprintf(w, verify200, remaining, time.Now().Add(37*time.Minute).Unix())
+			fmt.Fprintf(w, verify200, remaining, mock.resetTS)
 			return
 		}
 
@@ -618,7 +642,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(200)
-		fmt.Fprintf(w, retrieveToken200, remaining, time.Now().Add(12*time.Minute).Unix())
+		fmt.Fprintf(w, retrieveToken200, remaining, mock.resetTS)
 
 	case "/publicapi/retrieve/apikey":
 		if r.URL.Query().Get("token") == "" {
@@ -634,7 +658,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 
 		if mock.acceptToken {
 			w.WriteHeader(200)
-			fmt.Fprintf(w, retrieveAPIKey200, remaining, time.Now().Add(12*time.Minute).Unix())
+			fmt.Fprintf(w, retrieveAPIKey200, remaining, mock.resetTS)
 			return
 		}
 
@@ -650,6 +674,7 @@ type mockServer struct {
 	callLimit         bool
 	incomplete        bool
 	internalError     bool
+	resetTS           int64
 	server            *httptest.Server
 }
 
@@ -697,6 +722,7 @@ func (ms *mockServer) reset() {
 	ms.internalError = false
 	ms.callLimit = false
 	ms.start()
+	ms.resetTS = time.Now().Add(37 * time.Minute).Unix()
 }
 
 var mock = &mockServer{}
