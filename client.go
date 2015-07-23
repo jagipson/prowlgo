@@ -198,7 +198,7 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	if clt.unauthorized {
 		return clt.remaining, fmt.Errorf("api key(s) are known to be invalid")
 	}
-	if len(clt.config.APIKeys) == 0 {
+	if len(clt.apiKeys) == 0 {
 		return clt.remaining, fmt.Errorf("a valid api key is required for add operation")
 	}
 	if priority < -2 || priority > 2 {
@@ -374,7 +374,7 @@ func (clt *Client) makeAPIKeyRequestArgument() (req string) {
 	i := 0
 	for key := range clt.apiKeys {
 		req += key
-		if i < len(clt.config.APIKeys)-1 {
+		if i < len(clt.apiKeys)-1 {
 			req += ","
 		}
 		i++
@@ -421,6 +421,48 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 		clt.reset = time.Unix(response.Success.Resetdate, 0)
 		clt.remaining = response.Success.Remaining
 	}
+
+	return
+}
+
+// AddAPIKey will add a new API key to the list of keys held by this client.
+// All messages will then also be sent to the device associated to the newly added API key.
+// If the API key results from user input it might be a goor idea to call Verify() first to check
+// if the key is accepted by the server.
+// The function will return an error only in case of an illegal argument. Duplicates will be
+// handled sliently. This funtion does no checking with the prowl server. Unautorized keys will
+// not be detected in by this function.
+func (clt *Client) AddAPIKey(apiKey string) (err error) {
+	if len(apiKey) != 40 {
+		return fmt.Errorf("apiKey arguemtn must be exactly 40 chars long")
+	}
+
+	clt.mutex(enter)
+	defer clt.mutex(leave)
+
+	clt.apiKeys[apiKey] = true
+	clt.apiKeysDirty = true
+
+	return
+}
+
+// RemoveAPIKey removes the provided API key from the list of keys held by this client.
+// Messages will no longer be sent to the devices associated to this API key.
+// This function will only return an error in case of an illegal argument. If the provided
+// api key is not know to this client it will be handled silently.
+func (clt *Client) RemoveAPIKey(apiKey string) (err error) {
+	if len(apiKey) != 40 {
+		return fmt.Errorf("apiKey arguemtn must be exactly 40 chars long")
+	}
+
+	clt.mutex(enter)
+	defer clt.mutex(leave)
+
+	if _, ok := clt.apiKeys[apiKey]; !ok {
+		return
+	}
+	delete(clt.apiKeys, apiKey)
+	clt.apiKeysDirty = true
 
 	return
 }
