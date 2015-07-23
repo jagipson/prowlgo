@@ -163,7 +163,7 @@ func ExampleClient_AddWithURL() {
 
 	//Send something with a URL
 	remaining, err := client.AddWithURL(PrioNormal, "Test Event",
-		"Test description followed by a URL", "http://github.com/tweithoener/prowlgo")
+		"Test description followed by a URL", "http://github.com/tweithoener/prowlgo", true)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -230,13 +230,32 @@ func TestAdd(t *testing.T) {
 	if _, err := client.Add(PrioNormal, "Event", stringOfLen(10001)); err == nil {
 		t.Error("invalid description should produce an error")
 	}
-	if _, err := client.AddWithURL(PrioNormal, "Event", "Description", stringOfLen(257)); err == nil {
+	if _, err := client.AddWithURL(PrioNormal, "Event", "Description", stringOfLen(257), false); err == nil {
 		t.Error("invalid description should produce an error")
 	}
 
-	//description plus url too long for description: should be ok -- URL will be trimmed
-	if _, err := client.AddWithURL(PrioNormal, "Event", stringOfLen(9970), stringOfLen(100)); err != nil {
+	//check if not adding the URL to the description works
+	if _, err := client.AddWithURL(PrioNormal, "Event", "TEXT", "http://URL/", false); err != nil {
 		t.Error(err)
+	}
+	if mock.lastDescription != "TEXT" {
+		t.Error("description was altered")
+	}
+
+	//check if adding the URL to the description works
+	if _, err := client.AddWithURL(PrioNormal, "Event", "TEXT", "http://URL/", true); err != nil {
+		t.Error(err)
+	}
+	if mock.lastDescription != "TEXT http://URL/" {
+		t.Error("description was not composed correctly")
+	}
+
+	//description plus url too long for description: should be ok -- URL will be trimmed
+	if _, err := client.AddWithURL(PrioNormal, "Event", stringOfLen(9970), stringOfLen(100), true); err != nil {
+		t.Error(err)
+	}
+	if len(mock.lastDescription) > 10000 {
+		t.Error("appending url to description resulted in illegal description")
 	}
 
 	//make a succesfull call to get the reset timestamp
@@ -617,6 +636,7 @@ func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(200)
 		fmt.Fprintf(w, add200, remaining, mock.resetTS)
+		mock.lastDescription = r.FormValue("description")
 
 	case "/publicapi/verify":
 		if r.URL.Query().Get("apikey") == "" {
@@ -675,6 +695,7 @@ type mockServer struct {
 	incomplete        bool
 	internalError     bool
 	resetTS           int64
+	lastDescription   string
 	server            *httptest.Server
 }
 

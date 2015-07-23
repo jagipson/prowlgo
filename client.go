@@ -186,15 +186,16 @@ func NewClient(config Config) (clt *Client, err error) {
 // the prowl server or in case of illegal arguments. If the request was successful
 // the number of remaining prowl api requests (messages that can be sent) will be returned.
 func (clt *Client) Add(priority int, event string, description string) (remaining int, err error) {
-	return clt.AddWithURL(priority, event, description, "")
+	return clt.AddWithURL(priority, event, description, "", false)
 }
 
 // AddWithURL is the same as Add() with an additional URL argument. This URL will be presented to the
 // user of the prowl app. It can be tapped to open the respective location.
-// The URL will be appended to the description and also be sent as an argument to the prowl app.
-// As of the writing of this code the prowl app displays a little (i) next to the message that
-// the user can tap to open the URL.
-func (clt *Client) AddWithURL(priority int, event string, description string, withURL string) (remaining int, err error) {
+// If the appenURL argument is set to true the URL will be appended to the description. In any case
+// it will be sent as an seperate argument to the prowl app.
+// As of the writing of this code in such a case the prowl app displays a
+// little (i) next to the message that the user can tap to open the URL.
+func (clt *Client) AddWithURL(priority int, event string, description string, withURL string, appendURL bool) (remaining int, err error) {
 	if clt.unauthorized {
 		return clt.remaining, fmt.Errorf("api key(s) are known to be invalid")
 	}
@@ -222,10 +223,12 @@ func (clt *Client) AddWithURL(priority int, event string, description string, wi
 	withURL = strings.TrimSpace(withURL)
 
 	if len(withURL) > 0 {
-		if len(description)+len(withURL)+4 > 10000 {
-			description = strings.TrimSpace(description[0:10000-len(withURL)-4]) + "..."
+		if appendURL {
+			if len(description)+len(withURL)+4 > 10000 {
+				description = strings.TrimSpace(description[0:10000-len(withURL)-4]) + "..."
+			}
+			description = description + " " + withURL
 		}
-		description = description + " " + withURL
 	}
 
 	resp, err := http.PostForm(addURL, url.Values{
