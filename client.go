@@ -502,18 +502,23 @@ func (clt *Client) Config() Config {
 	return clt.config
 }
 
-func (clt *Client) logWait(prio int, event string, message string, wait time.Duration) {
-	clt.config.Logger.Println(event + ": " + message + " " + *clt.config.ToProwlLabel)
+func (clt *Client) logWait(prio int, event string, description string, wait time.Duration) {
+	clt.config.Logger.Println(event + ": " + description + " " + *clt.config.ToProwlLabel)
+
+	descrShort := description
+	evShort := event
+	if len(description) > 20 {
+		descrShort = strings.TrimSpace(description[0:17]) + "..."
+	}
+	if len(event) > 10 {
+		evShort = strings.TrimSpace(event[0:7]) + "..."
+	}
+	msgShort := fmt.Sprintf("%s: %s", evShort, descrShort)
+
 	sent := make(chan bool, 1)
 	prowlf := func() {
-		if _, err := clt.Add(prio, event, message); err != nil {
-			if len(message) > 20 {
-				message = strings.TrimSpace(message[0:17]) + "..."
-			}
-			if len(event) > 10 {
-				event = strings.TrimSpace(event[0:7]) + "..."
-			}
-			clt.config.Logger.Printf("can't send prowl message (\"%s: %s\") %s", event, message, err)
+		if _, err := clt.Add(prio, event, description); err != nil {
+			clt.config.Logger.Printf("can't send prowl message (\"%s\") %s", msgShort, err)
 		}
 		sent <- true
 	}
@@ -524,7 +529,7 @@ func (clt *Client) logWait(prio int, event string, message string, wait time.Dur
 		go prowlf()
 		select {
 		case <-time.After(wait):
-			clt.config.Logger.Println("Timeout while sending prowl message")
+			clt.config.Logger.Printf("timeout while sending prowl message (\"%s\")", msgShort)
 		case <-sent:
 		}
 	}
@@ -534,7 +539,7 @@ func (clt *Client) logWait(prio int, event string, message string, wait time.Dur
 // concurrently sending the message to the prowl server. The call will report an error
 // in the logs if sending to the server fails or times out.
 func (clt *Client) Log(prio int, event string, message string) {
-	clt.logWait(prio, event, message, defaultTimeout)
+	go clt.logWait(prio, event, message, defaultTimeout)
 }
 
 // LogSync performs the same actions as Log but will block until the request to the prowl

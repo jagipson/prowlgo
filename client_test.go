@@ -1,6 +1,7 @@
 package prowlgo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 )
@@ -334,12 +336,68 @@ func ExampleClient_Log() {
 	//defined Logger.
 	client.Log(PrioNormal, "Test Event", "Test description which also goes to the log")
 
+	//wait a little to make sure first log message gets written out first.
+	<-time.After(1 * time.Second)
+
 	//And the same synn
 	client.LogSync(PrioNormal, "Test Event", "Test description which also goes to the log in sync")
 
 	//output:
 	//TestLogger: Test Event: Test description which also goes to the log --> Prowl
 	//TestLogger: Test Event: Test description which also goes to the log in sync --> Prowl
+}
+
+func TestLogSync(t *testing.T) {
+	//this is going to be a little more complex:
+	//LogSync()/Log() does not report errors but writes them to the configured log
+	//Thus we need a custom logger to check what is in the logs ...
+	buf := make([]byte, 1000)
+	logbuf := bytes.NewBuffer(buf)
+	client, err := NewClient(Config{
+		APIKeys: aValidAPIKey,
+		Logger:  log.New(logbuf, "", 0),
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	defer mock.reset()
+
+	if !testing.Short() {
+		mock.reset()
+		//make sure the prowl server mock responds very slow
+		mock.wait = 35 * time.Second
+
+		before := time.Now()
+		client.Log(PrioNormal, "TestEvent", "TestDescription")
+
+		//check if call to Log was async (issue #9)
+		if before.Add(1 * time.Second).Before(time.Now()) {
+			t.Error("function Log() is not async")
+		}
+
+		//Log() will timeout after 30 seconds. we should see the error after that.
+		<-time.After(31 * time.Second)
+		logstr := logbuf.String()
+		if !strings.Contains(logstr, "timeout") {
+			t.Error("timeout error expected but not found")
+		}
+	} else {
+		t.Log("skipping timeout test in short mode")
+	}
+
+	mock.reset()
+	mock.acceptAPIKeys = false
+
+	client.LogSync(PrioNormal, "0123456789012", "01234567890123456789012")
+	logstr := logbuf.String()
+	if !strings.Contains(logstr, "can't send prowl message") {
+		t.Error("send error expected but not found")
+	}
+	if !strings.Contains(logstr, "(\"0123456...: 01234567890123456...\")") {
+		t.Error("shortened message not found in error log")
+	}
+
 }
 
 func ExampleClient_Verify_simple() {
@@ -698,6 +756,8 @@ func TestAddRemoveAPIKeys(t *testing.T) {
 func prowlMockHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "text/xml")
 
+	<-time.After(mock.wait)
+
 	if mock.internalError {
 		w.WriteHeader(500)
 		fmt.Sprintln(w, internalError)
@@ -794,6 +854,7 @@ type mockServer struct {
 	callLimit         bool
 	incomplete        bool
 	internalError     bool
+	wait              time.Duration
 	resetTS           int64
 	lastDescription   string
 	lastAPIKey        string
@@ -843,6 +904,7 @@ func (ms *mockServer) reset() {
 	ms.incomplete = false
 	ms.internalError = false
 	ms.callLimit = false
+	ms.wait = 0
 	ms.start()
 	ms.resetTS = time.Now().Add(37 * time.Minute).Unix()
 }
