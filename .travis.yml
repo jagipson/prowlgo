@@ -16,7 +16,7 @@ install:
    - go get github.com/mattn/goveralls
    - go get golang.org/x/tools/cmd/cover
 
-#coveralls.io is disfunctional. Do not push coverage info to prevent the build from failing
+
 script:
     - go test -covermode=count -coverprofile=profile.cov
-#    - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci -repotoken $COVERALLS_TOKEN
+    - $HOME/gopath/bin/goveralls -coverprofile=profile.cov -service=travis-ci -repotoken $COVERALLS_TOKEN
