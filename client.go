@@ -396,7 +396,6 @@ func (clt *Client) handleResponse(resp *http.Response, inerr error) (response Re
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
 			cerr = fmt.Errorf("error closing HTTP response body: %s", cerr)
-			fmt.Println(cerr)
 			if err == nil {
 				err = cerr
 			} else {
