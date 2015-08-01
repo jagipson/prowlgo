@@ -41,7 +41,9 @@ const (
 	defaultTimeout = 30 * time.Second
 	waitSync       = -1 * time.Second
 
-	defaultToProwlLabel = "(copied to prowl)"
+	//DefaultToProwlLabel is the default label that is attached to log lines that have also been
+	//sent to prowl (see Log() function).
+	DefaultToProwlLabel = "(copied to prowl)"
 
 	enter = true
 	leave = false
@@ -164,7 +166,7 @@ func NewClient(config Config) (clt *Client, err error) {
 		config.Logger = log.New(os.Stderr, "", log.LstdFlags)
 	}
 	if config.ToProwlLabel == nil {
-		cpy := defaultToProwlLabel
+		cpy := DefaultToProwlLabel
 		config.ToProwlLabel = &cpy
 	}
 

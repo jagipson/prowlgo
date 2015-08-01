@@ -1,4 +1,4 @@
-package prowlgo
+package prowlgo_test
 
 import (
 	"bytes"
@@ -14,22 +14,24 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	prowl "github.com/tweithoener/prowlgo"
 )
 
 func TestNewClient(t *testing.T) {
-	_, err := NewClient(Config{})
+	_, err := prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error("error creating empty client")
 	}
 
-	_, err = NewClient(Config{
+	_, err = prowl.NewClient(prowl.Config{
 		Token: "12345",
 	})
 	if err == nil {
 		t.Error("invalid token should produce an error")
 	}
 
-	_, err = NewClient(Config{
+	_, err = prowl.NewClient(prowl.Config{
 		Token:       "1234512345123451234512345123451234512345",
 		ProviderKey: "12345",
 	})
@@ -37,7 +39,7 @@ func TestNewClient(t *testing.T) {
 		t.Error("invalid provider key should produce an error")
 	}
 
-	_, err = NewClient(Config{
+	_, err = prowl.NewClient(prowl.Config{
 		Token:       "1234512345123451234512345123451234512345",
 		ProviderKey: "1234123451234512345123451234512345123455",
 		Application: stringOfLen(257),
@@ -46,7 +48,7 @@ func TestNewClient(t *testing.T) {
 		t.Error("invalid application should produce an error")
 	}
 
-	_, err = NewClient(Config{
+	_, err = prowl.NewClient(prowl.Config{
 		Token:       "1234512345123451234512345123451234512345",
 		ProviderKey: "1234123451234512345123451234512345123455",
 		Application: "better!",
@@ -59,7 +61,7 @@ func TestNewClient(t *testing.T) {
 
 func ExampleNewClient() {
 	// Create a new client e.g. for sending out message.
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
@@ -75,7 +77,7 @@ func ExampleNewClient() {
 	fmt.Println("token: " + config.Token + ".")
 
 	//Now create a new client.
-	other, err := NewClient(config)
+	other, err := prowl.NewClient(config)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -94,7 +96,7 @@ func ExampleNewClient() {
 
 func ExampleClient_Add_singleKey() {
 	// Create a new client for sending out message.
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
@@ -104,7 +106,7 @@ func ExampleClient_Add_singleKey() {
 	}
 
 	//Send something
-	remaining, err := client.Add(PrioNormal, "Test Event", "Test description")
+	remaining, err := client.Add(prowl.PrioNormal, "Test Event", "Test description")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -122,7 +124,7 @@ func ExampleClient_Add_multiKey() {
 	// Create a new client for sending out message to multiple devices.
 	//It's not a lot different from sending to a single device -- it's
 	//just multiple api keys in the array this time!
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys:     multipleValidAPIKeys,
 		Application: "prowlgo Example",
 	})
@@ -138,7 +140,7 @@ func ExampleClient_Add_multiKey() {
 	}
 
 	//Send something
-	remaining, err := client.Add(PrioNormal, "Test Event", "This message is sent to multiple devices...")
+	remaining, err := client.Add(prowl.PrioNormal, "Test Event", "This message is sent to multiple devices...")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -154,7 +156,7 @@ func ExampleClient_Add_multiKey() {
 
 func ExampleClient_AddWithURL() {
 	// Create a new client for sending out message.
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
@@ -164,7 +166,7 @@ func ExampleClient_AddWithURL() {
 	}
 
 	//Send something with a URL
-	remaining, err := client.AddWithURL(PrioNormal, "Test Event",
+	remaining, err := client.AddWithURL(prowl.PrioNormal, "Test Event",
 		"Test description followed by a URL", "http://github.com/tweithoener/prowlgo", true)
 	if err != nil {
 		fmt.Println(err)
@@ -183,18 +185,18 @@ func TestAdd(t *testing.T) {
 	mock.reset()
 	defer mock.reset()
 
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		Application: "prowlgo Example",
 	})
 	if err != nil {
 		t.Error(err)
 	}
 
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err == nil {
 		t.Error("add without api key should produce an error")
 	}
 
-	client, err = NewClient(Config{
+	client, err = prowl.NewClient(prowl.Config{
 		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
@@ -203,16 +205,16 @@ func TestAdd(t *testing.T) {
 	}
 	mock.acceptAPIKeys = false
 
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err == nil {
 		t.Error("illegal api key should produce an error")
 	}
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err == nil {
 		t.Error("client should be unauthorized now")
 	}
 
 	mock.reset()
 
-	client, err = NewClient(Config{
+	client, err = prowl.NewClient(prowl.Config{
 		APIKeys:     aValidAPIKey,
 		Application: "prowlgo Example",
 	})
@@ -226,18 +228,18 @@ func TestAdd(t *testing.T) {
 	if _, err := client.Add(3, "Event", "Description"); err == nil {
 		t.Error("invalid prio should produce an error")
 	}
-	if _, err := client.Add(PrioNormal, stringOfLen(1025), "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, stringOfLen(1025), "Description"); err == nil {
 		t.Error("invalid event should produce an error")
 	}
-	if _, err := client.Add(PrioNormal, "Event", stringOfLen(10001)); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", stringOfLen(10001)); err == nil {
 		t.Error("invalid description should produce an error")
 	}
-	if _, err := client.AddWithURL(PrioNormal, "Event", "Description", stringOfLen(257), false); err == nil {
+	if _, err := client.AddWithURL(prowl.PrioNormal, "Event", "Description", stringOfLen(257), false); err == nil {
 		t.Error("invalid description should produce an error")
 	}
 
 	//check if not adding the URL to the description works
-	if _, err := client.AddWithURL(PrioNormal, "Event", "TEXT", "http://URL/", false); err != nil {
+	if _, err := client.AddWithURL(prowl.PrioNormal, "Event", "TEXT", "http://URL/", false); err != nil {
 		t.Error(err)
 	}
 	if mock.lastDescription != "TEXT" {
@@ -245,7 +247,7 @@ func TestAdd(t *testing.T) {
 	}
 
 	//check if adding the URL to the description works
-	if _, err := client.AddWithURL(PrioNormal, "Event", "TEXT", "http://URL/", true); err != nil {
+	if _, err := client.AddWithURL(prowl.PrioNormal, "Event", "TEXT", "http://URL/", true); err != nil {
 		t.Error(err)
 	}
 	if mock.lastDescription != "TEXT http://URL/" {
@@ -253,7 +255,7 @@ func TestAdd(t *testing.T) {
 	}
 
 	//description plus url too long for description: should be ok -- URL will be trimmed
-	if _, err := client.AddWithURL(PrioNormal, "Event", stringOfLen(9970), stringOfLen(100), true); err != nil {
+	if _, err := client.AddWithURL(prowl.PrioNormal, "Event", stringOfLen(9970), stringOfLen(100), true); err != nil {
 		t.Error(err)
 	}
 	if len(mock.lastDescription) > 10000 {
@@ -261,17 +263,17 @@ func TestAdd(t *testing.T) {
 	}
 
 	//make a succesfull call to get the reset timestamp
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err != nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err != nil {
 		t.Error(err)
 	}
 
 	//Now the call limit is becoming exceeded ....
 	mock.callLimit = true
 
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err == nil {
 		t.Error("api call limit reached should produce an error")
 	}
-	if _, err := client.Add(PrioNormal, "Event", "Description"); err == nil {
+	if _, err := client.Add(prowl.PrioNormal, "Event", "Description"); err == nil {
 		t.Error("client should be rejected temporarily now")
 	}
 
@@ -279,7 +281,7 @@ func TestAdd(t *testing.T) {
 
 func ExampleClient_Config() {
 	// Create a new client e.g. for retrieving an api key
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		ProviderKey: aValidProviderKey,
 		Application: "prowlgo Example",
 	})
@@ -295,7 +297,7 @@ func ExampleClient_Config() {
 		return
 	}
 	//Write buf to file, shutdown, ..., start, read file,
-	config := Config{}
+	config := prowl.Config{}
 	err = json.Unmarshal(buf, &config)
 	if err != nil {
 		fmt.Println(err)
@@ -303,7 +305,7 @@ func ExampleClient_Config() {
 	}
 
 	//Now create a new client.
-	other, err := NewClient(config)
+	other, err := prowl.NewClient(config)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -321,7 +323,7 @@ func ExampleClient_Config() {
 func ExampleClient_Log() {
 	toProwlLabel := "--> Prowl"
 	// Create a new client for sending out messages
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys:      aValidAPIKey,
 		Application:  "prowlgo Example",
 		ToProwlLabel: &toProwlLabel,
@@ -334,13 +336,13 @@ func ExampleClient_Log() {
 
 	//Send out a prowl message that should also be logged by the
 	//defined Logger.
-	client.Log(PrioNormal, "Test Event", "Test description which also goes to the log")
+	client.Log(prowl.PrioNormal, "Test Event", "Test description which also goes to the log")
 
 	//wait a little to make sure first log message gets written out first.
 	<-time.After(1 * time.Second)
 
 	//And the same synn
-	client.LogSync(PrioNormal, "Test Event", "Test description which also goes to the log in sync")
+	client.LogSync(prowl.PrioNormal, "Test Event", "Test description which also goes to the log in sync")
 
 	//output:
 	//TestLogger: Test Event: Test description which also goes to the log --> Prowl
@@ -353,7 +355,7 @@ func TestLogSync(t *testing.T) {
 	//Thus we need a custom logger to check what is in the logs ...
 	buf := make([]byte, 1000)
 	logbuf := bytes.NewBuffer(buf)
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys: aValidAPIKey,
 		Logger:  log.New(logbuf, "", 0),
 	})
@@ -369,7 +371,7 @@ func TestLogSync(t *testing.T) {
 		mock.wait = 35 * time.Second
 
 		before := time.Now()
-		client.Log(PrioNormal, "TestEvent", "TestDescription")
+		client.Log(prowl.PrioNormal, "TestEvent", "TestDescription")
 
 		//check if call to Log was async (issue #9)
 		if before.Add(1 * time.Second).Before(time.Now()) {
@@ -389,7 +391,7 @@ func TestLogSync(t *testing.T) {
 	mock.reset()
 	mock.acceptAPIKeys = false
 
-	client.LogSync(PrioNormal, "0123456789012", "01234567890123456789012")
+	client.LogSync(prowl.PrioNormal, "0123456789012", "01234567890123456789012")
 	logstr := logbuf.String()
 	if !strings.Contains(logstr, "can't send prowl message") {
 		t.Error("send error expected but not found")
@@ -403,7 +405,7 @@ func TestLogSync(t *testing.T) {
 func ExampleClient_Verify_simple() {
 	// Create a new client
 	//If we just use it to verify an API key we do not need to configure anything.
-	client, err := NewClient(Config{})
+	client, err := prowl.NewClient(prowl.Config{})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -422,7 +424,7 @@ func TestVerify(t *testing.T) {
 
 	mock.reset()
 	//Create a client with provider key
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		ProviderKey: aValidProviderKey,
 	})
 	if err != nil {
@@ -436,7 +438,7 @@ func TestVerify(t *testing.T) {
 
 	//And more things that should not work...
 	//A provider key is not a api key
-	client, err = NewClient(Config{})
+	client, err = prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -452,7 +454,7 @@ func TestVerify(t *testing.T) {
 	mock.acceptProviderKey = false
 
 	//A provider key that does not validate is not ap orblem.
-	client, err = NewClient(Config{
+	client, err = prowl.NewClient(prowl.Config{
 		ProviderKey: singleValidAPIKey,
 	})
 	if err != nil {
@@ -466,7 +468,7 @@ func TestVerify(t *testing.T) {
 	}
 
 	//And finally no key at all -- can't work either
-	client, err = NewClient(Config{})
+	client, err = prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -493,7 +495,7 @@ func TestVerify(t *testing.T) {
 
 func ExampleClient_RetrieveToken() {
 	//A client that is good to retrieve a token
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		ProviderKey: aValidProviderKey,
 	})
 	if err != nil {
@@ -527,7 +529,7 @@ func TestRetrieveTokenAndAPIKey(t *testing.T) {
 	mock.reset()
 	defer mock.reset()
 
-	client, err := NewClient(Config{})
+	client, err := prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -542,7 +544,7 @@ func TestRetrieveTokenAndAPIKey(t *testing.T) {
 		t.Error("retrieve api key with invalid provider key/token should produce an error")
 	}
 
-	client, err = NewClient(Config{
+	client, err = prowl.NewClient(prowl.Config{
 		Token: "0987609876098760987609876098760987609876",
 	})
 	if err != nil {
@@ -554,7 +556,7 @@ func TestRetrieveTokenAndAPIKey(t *testing.T) {
 		t.Error("retrieve api key with invalid provider key should produce an error")
 	}
 
-	client, err = NewClient(Config{
+	client, err = prowl.NewClient(prowl.Config{
 		ProviderKey: "0123401234012340123401234012340123401234",
 		Token:       "0987609876098760987609876098760987609876",
 	})
@@ -634,7 +636,7 @@ func TestReset(t *testing.T) {
 	resetTS := time.Now().Add(2 * time.Minute).Unix()
 	mock.resetTS = resetTS
 
-	client, err := NewClient(Config{})
+	client, err := prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -654,7 +656,7 @@ func TestReset(t *testing.T) {
 func ExampleClient_AddAPIKey() {
 
 	//First create a new client, with a single API key
-	client, err := NewClient(Config{
+	client, err := prowl.NewClient(prowl.Config{
 		APIKeys: []string{"5a7d185a7d185a7d185a7d185a7d185a7d185a7d"},
 	})
 	if err != nil {
@@ -697,7 +699,7 @@ func ExampleClient_AddAPIKey() {
 
 func TestAddRemoveAPIKeys(t *testing.T) {
 
-	client, err := NewClient(Config{})
+	client, err := prowl.NewClient(prowl.Config{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -738,7 +740,7 @@ func TestAddRemoveAPIKeys(t *testing.T) {
 	if err := client.AddAPIKey(key2); err != nil {
 		t.Error(err)
 	}
-	if _, err := client.Add(PrioNormal, "TestEvent", "TestDescription"); err != nil {
+	if _, err := client.Add(prowl.PrioNormal, "TestEvent", "TestDescription"); err != nil {
 		t.Error(err)
 	}
 
